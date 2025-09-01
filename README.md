@@ -71,17 +71,17 @@ And after editing the `main.jsx` and `App.jsx` files you should have something l
 
 ```js {.line-numbers}
 // main.jsx
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import App from './App.jsx'
-import 'bootswatch/dist/minty/bootstrap.min.css';
-import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import App from "./App.jsx";
+import "bootswatch/dist/minty/bootstrap.min.css";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
-createRoot(document.getElementById('root')).render(
+createRoot(document.getElementById("root")).render(
   <StrictMode>
     <App />
-  </StrictMode>,
-)
+  </StrictMode>
+);
 ```
 
 > I also imported the `Minty` theme from `Bootswatch`. You can choose any other theme from [here](https://bootswatch.com/).
@@ -90,15 +90,10 @@ createRoot(document.getElementById('root')).render(
 // App.jsx
 
 function App() {
-
-  return (
-    <main className="container">
-      Hello
-    </main>
-  )
+  return <main className="container">Hello</main>;
 }
 
-export default App
+export default App;
 ```
 
 Now, you can start the development server using the following command.
@@ -119,7 +114,7 @@ First what pages do we need?
 
 - `Home Page` - This page will have a search bar and will display the search results or just display some random cocktails.
 - `About Page` - This page will have some information about the project and the API used.
-- `Single Cocktail Page` - This page will display the details of a single cocktail. 
+- `Single Cocktail Page` - This page will display the details of a single cocktail.
 - `Error Page` - This page will display a 404 error message if the user tries to access a non-existing route.
 
 How, do we manage the state?
@@ -151,6 +146,7 @@ export const reducer = (state, action) => {
   return state;
 };
 ```
+
 > The reducer function will just return the state for now. We will add more and more logic to it as we progress.
 
 ```js {.line-numbers}
@@ -177,28 +173,28 @@ const GlobalContext = ({ children }) => {
 };
 
 export default GlobalContext;
-
 ```
+
 > The `GlobalContext` component will wrap the entire application and provide the state and dispatch function to all the components.
 
 Now, let's wrap the `App` component with the `GlobalContext` component in the `main.jsx` file.
 
 ```js {.line-numbers}
 // main.jsx
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import App from './App.jsx'
-import 'bootswatch/dist/minty/bootstrap.min.css';
-import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-import { GlobalContext } from './context/GlobalContext.jsx';
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import App from "./App.jsx";
+import "bootswatch/dist/minty/bootstrap.min.css";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import { GlobalContext } from "./context/GlobalContext.jsx";
 
-createRoot(document.getElementById('root')).render(
+createRoot(document.getElementById("root")).render(
   <StrictMode>
     <GlobalContext>
       <App />
     </GlobalContext>
-  </StrictMode>,
-)
+  </StrictMode>
+);
 ```
 
 Now, we can access the state and dispatch function in any component using the `useAppContext` hook.
@@ -259,10 +255,11 @@ const Navbar = () => {
 };
 export default memo(Navbar);
 ```
-> I memoized the `Navbar` component using `React.memo` to prevent unnecessary re-renders.
-Let's render it in the `App.jsx` file.
 
-> Note: If you just add the `Navbar` component in the `App.jsx` file, it will throw an error because we used the `Link` component from `react-router' which won't work unless we wrap the `App` component with the `BrowserRouter` component from `react-router-dom`.
+> I memoized the `Navbar` component using `React.memo` to prevent unnecessary re-renders.
+> Let's render it in the `App.jsx` file.
+
+> Note: If you just add the `Navbar` component in the `App.jsx` file, it will throw an error because we used the `Link` component from `react-router' which won't work unless we wrap the `App`component with the`BrowserRouter`component from`react-router-dom`.
 
 So, let's do that.
 
@@ -282,6 +279,7 @@ function App() {
 
 export default App;
 ```
+
 Now, we can see the navbar on the screen.
 
 A very simple one with some stylling I copied from the `Bootstrap` website.
@@ -359,7 +357,7 @@ export default SharedLayout;
 
 Now, we can simply lazy import the `SharedLayout` component in the `App.jsx` file and wrap all the routes with it.
 
-```js {.line-numbers} 
+```js {.line-numbers}
 import { BrowserRouter, Routes, Route } from "react-router";
 import React, { Suspense, lazy } from "react";
 const Home = lazy(() => import("./pages/Home"));
@@ -384,7 +382,6 @@ function App() {
 }
 
 export default App;
-
 ```
 
 > Here I used `React.lazy` and `Suspense` to lazy load the components. This will improve the performance of the application by loading only the required components.
@@ -414,11 +411,7 @@ const SharedLayout = () => {
     <>
       <Navbar />
       <main className="container">
-        <Suspense fallback={
-          <div>
-           Loading...
-          </div>
-        }>
+        <Suspense fallback={<div>Loading...</div>}>
           <Outlet />
         </Suspense>
       </main>
@@ -449,8 +442,12 @@ const Error = () => {
       <div className="card shadow p-4 text-center" style={{ maxWidth: 400 }}>
         <h1 className="display-4 text-danger mb-3">404</h1>
         <h2 className="mb-3">Page Not Found</h2>
-        <p className="mb-4">Sorry, the page you are looking for does not exist.</p>
-        <a href="/" className="btn btn-primary">Go Home</a>
+        <p className="mb-4">
+          Sorry, the page you are looking for does not exist.
+        </p>
+        <a href="/" className="btn btn-primary">
+          Go Home
+        </a>
       </div>
     </div>
   );
@@ -485,8 +482,31 @@ const Loading = () => {
 
 export default Loading;
 ```
+
 > A simple loading spinner using Bootstrap classes.
 
 Now, we can use this `Loading` component wherever we need to show a loading spinner.
 
 And there we have a Nice looking `Error` page and a `Loading` component.
+
+# Fetching Data from the API
+
+We have the basic structure of the project ready.
+
+And we can now focus on the logical part of the project.
+
+We need to fetch data from the API and display it on the `Home` page.
+
+To, fetch the data effectively, we need to know that what we are working with.
+
+The API we are using is [TheCocktailDB](https://www.thecocktaildb.com/api.php).
+
+There you can see some pretty cool free APIs. I'll not use all of them but just a few.
+
+- Search cocktail by name - `https://www.thecocktaildb.com/api/json/v1/1/search.php?s=margarita`
+
+This endpoint will return a list of cocktails that match the search query at the very end of the URL. Here the search query is `margarita`. You can change it to anything you want.
+
+Another endpoint is
+
+- Lookup full cocktail details by id - `https://www.thecocktaildb.com/api/json/v1/1/lookup.php?i=11007`

@@ -529,30 +529,145 @@ We can use this to our advantage.
 
 When the `home` page `loads`, we can make an API call to fetch cocktails with a random letter.
 
-Than we can display the results on the screen.
-
-So, let's do that.
+Than we can display the results on the console.
 
 ```js {.line-numbers}
 // src/pages/Home.jsx
-import React, { memo, useEffect } from "react";
-import { useAppContext } from "../context/GlobalContext";
+import React, { memo, useEffect, useState} from "react"; 
 import axios from "axios";
 import Loading from "../components/Loading";
-import CocktailList from "../components/CocktailList";
 
 const Home = () => {
-  const { cocktails, loading, dispatch } = useAppContext();
+  const [loading, setLoading] = useState(true);
+  const [cocktails, setCocktails] = useState([]);
+  const [error, setError] = useState(null);
 
-  const fetchRandomCocktails = async () => {
-    dispatch({ type: "SET_LOADING" });
-    const randomChar = String.fromCharCode(
-      97 + Math.floor(Math.random() * 26)
-    ); // generate a random character from a-z
+  const fetchCocktails = async () => {
     try {
+      const letters = "abcdefghijklmnopqrstuvwxyz";
+      const randomLetter =
+        letters[Math.floor(Math.random() * letters.length)]; // Get a random letter
       const response = await axios.get(
-        `https://www.thecocktaildb.com/api/json/v1/1/search.php?s=${randomChar}`
-      );
+        `https://www.thecocktaildb.com/api/json/v1/1/search.php?s=${randomLetter}`
+      ); // Make an API call to fetch cocktails with the random letter
+      const data = response.data.drinks;
+      console.log(data);
+    } catch (error) {
+      console.log(error);
+    }
+    finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCocktails();
+  }, []);
+
+  if (loading) {
+    return <Loading />;
+  }
+
+  return <h1>Home Page</h1>;
+};
+export default memo(Home);
+```
+
+Now, when we visit the home page and go to the console, we can see a list of cocktails with a random letter in their name.
+
+We are successfully fetching data from the API.
+
+But there is a huge issue.
+
+Let's have a look at the `data` we are getting from the API.
+
+```json
+[
+  {
+      "idDrink": "17141",
+      "strDrink": "Smut",
+      "strDrinkAlternate": null,
+      "strTags": null,
+      "strVideo": null,
+      "strCategory": "Punch / Party Drink",
+      "strIBA": null,
+      "strAlcoholic": "Alcoholic",
+      "strGlass": "Beer mug",
+      "strInstructions": "Throw it all together and serve real cold.",
+      "strInstructionsES": "Mézclalo todo y sírvelo bien frío.",
+      "strInstructionsDE": "Schütte alles zusammen und serviere es kalt.",
+      "strInstructionsFR": "Mélangez le tout et servez froid.",
+      "strInstructionsIT": "Metti tutto insieme e servi freddo.",
+      "strInstructionsZH-HANS": null,
+      "strInstructionsZH-HANT": null,
+      "strDrinkThumb": "https://www.thecocktaildb.com/images/media/drink/rx8k8e1504365812.jpg",
+      "strIngredient1": "Red wine",
+      "strIngredient2": "Peach schnapps",
+      "strIngredient3": "Pepsi Cola",
+      "strIngredient4": "Orange juice",
+      "strIngredient5": null,
+      "strIngredient6": null,
+      "strIngredient7": null,
+      "strIngredient8": null,
+      "strIngredient9": null,
+      "strIngredient10": null,
+      "strIngredient11": null,
+      "strIngredient12": null,
+      "strIngredient13": null,
+      "strIngredient14": null,
+      "strIngredient15": null,
+      "strMeasure1": "1/3 part ",
+      "strMeasure2": "1 shot ",
+      "strMeasure3": "1/3 part ",
+      "strMeasure4": "1/3 part ",
+      "strMeasure5": null,
+      "strMeasure6": null,
+      "strMeasure7": null,
+      "strMeasure8": null,
+      "strMeasure9": null,
+      "strMeasure10": null,
+      "strMeasure11": null,
+      "strMeasure12": null,
+      "strMeasure13": null,
+      "strMeasure14": null,
+      "strMeasure15": null,
+      "strImageSource": null,
+      "strImageAttribution": null,
+      "strCreativeCommonsConfirmed": "No",
+      "dateModified": "2017-09-02 16:23:32"
+    },
+    .... // and many more
+]
+```
+
+So, many attributes. We need to filter out the data we need.
+
+Because managing and using all these attributes will be a nightmare.
+
+So, we will filter out the data we need and store it in the `cocktails` state variable.
+
+I think we know how we can do that.
+
+```js {.line-numbers}
+// src/pages/Home.jsx
+import React, { memo, useEffect, useState} from "react"; 
+import axios from "axios";
+import Loading from "../components/Loading";
+
+
+const Home = () => {
+  const [loading, setLoading] = useState(true);
+  const [cocktails, setCocktails] = useState([]);
+  const [error, setError] = useState(null);
+
+  const fetchCocktails = async () => {
+    try {
+      const letters = "abcdefghijklmnopqrstuvwxyz";
+      const randomLetter =
+        letters[Math.floor(Math.random() * letters.length)]; // Get a random letter
+      const response = await axios.get(
+        `https://www.thecocktaildb.com/api/json/v1/1/search.php?s=${randomLetter}`
+      ); // Make an API call to fetch cocktails with the random letter
       const data = response.data.drinks;
       if (data) {
         const newCocktails = data.map((item) => {
@@ -560,41 +675,261 @@ const Home = () => {
             idDrink,
             strDrink,
             strDrinkThumb,
+            strCategory,
             strAlcoholic,
             strGlass,
+            strInstructions,
           } = item;
           return {
             id: idDrink,
             name: strDrink,
             image: strDrinkThumb,
-            info: strAlcoholic,
+            category: strCategory,
+            alcoholic: strAlcoholic,
             glass: strGlass,
+            instructions: strInstructions,
           };
         });
-        dispatch({ type: "SET_COCKTAILS", payload: newCocktails });
+        setCocktails(newCocktails);
       } else {
-        dispatch({ type: "SET_COCKTAILS", payload: [] });
+        setError("No cocktails found");
       }
     } catch (error) {
       console.log(error);
-      dispatch({ type: "SET_COCKTAILS", payload: [] });
+      setError("Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchRandomCocktails();
+    fetchCocktails();
   }, []);
 
   if (loading) {
     return <Loading />;
   }
 
+  return <h1>Home Page</h1>;
+
+};
+export default memo(Home);
+```
+
+> Here we are filtering out the data we need and storing it in the `cocktails` state variable by mapping and returning a new object with only the required attributes Because we don't need all the attributes from the API response. 
+
+Okay, it works... Now we integrate this whole process with the `GlobalContext` and `reducer` we created earlier.
+
+Go to the `GlobalContext.jsx` file and add a new state variable called `cocktails` and a new action called `SET_COCKTAILS` in the `reducer.js` file.
+
+```js {.line-numbers}
+// src/context/GlobalContext.jsx
+import React, { createContext, useContext } from "react";
+import { useReducer } from "react";
+import { reducer } from "./reducer";
+
+const appContext = createContext();
+
+export const useAppContext = () => {
+  return useContext(appContext);
+};
+
+const initialState = {
+  cocktails: [],
+  loading: true,
+  error: null,
+};
+
+const GlobalContext = ({ children }) => {
+  const [state, dispatch] = useReducer(reducer, initialState);
   return (
-    <div>
-      <h1 className="text-center mb-4">Cocktail Recipes</h1>
-      <Cocktail List cocktails={cocktails} />
+    <appContext.Provider value={{ ...state, dispatch }}>
+      {children}
+    </appContext.Provider>
+  );
+};
+
+export default GlobalContext;
+```
+
+Now we can access the `cocktails`, `loading` and `error` state variables in any component using the `useAppContext` hook.
+
+So, let's setup the `reducer.js` file to handle the `SET_COCKTAILS`, `SET_LOADING` and `SET_ERROR` actions.
+
+```js {.line-numbers}
+// src/context/reducer.js
+export const SET_COCKTAILS = "SET_COCKTAILS";
+export const SET_LOADING = "SET_LOADING";
+export const SET_ERROR = "SET_ERROR";
+
+export const reducer = (state, action) => {
+  const { type, payload } = action;
+
+  if (type === SET_COCKTAILS) {
+    return { ...state, cocktails: payload, loading: false, error: null };
+  }
+
+  if (type === SET_LOADING) {
+    return { ...state, loading: payload };
+  }
+
+  if (type === SET_ERROR) {
+    return { ...state, error: payload };
+  }
+
+  throw new Error(`No matching action type: ${type}`); // This will throw an error if the action type is not recognized.
+};
+
+```
+
+> Here we are handling the `SET_COCKTAILS`, `SET_LOADING` and `SET_ERROR` actions in the reducer function. When the `SET_COCKTAILS` action is dispatched, it will update the `cocktails` state variable with the payload and set the `loading` state to false and `error` to null. Similarly, for the `SET_LOADING` and `SET_ERROR` actions.
+
+Now, we can use these actions in the `Home` page to fetch the data and update the state.
+
+```js {.line-numbers}
+// src/pages/Home.jsx
+import React, { memo, useEffect } from "react";
+import axios from "axios";
+import Loading from "../components/Loading";
+import CocktailList from "../components/CocktailList";
+import { useAppContext } from "../context/GlobalContext";
+import { SET_COCKTAILS, SET_LOADING, SET_ERROR } from "../context/reducer";
+
+const Home = () => {
+  const { cocktails, loading, error, dispatch } = useAppContext();
+
+  const fetchCocktails = async () => {
+    dispatch({ type: SET_LOADING, payload: true });
+    try {
+      const letters = "abcdefghijklmnopqrstuvwxyz";
+      const randomLetter = letters[Math.floor(Math.random() * letters.length)]; // Get a random letter
+      const response = await axios.get(
+        `https://www.thecocktaildb.com/api/json/v1/1/search.php?s=${randomLetter}`
+      ); // Make an API call to fetch cocktails with the random letter
+      const data = response.data.drinks;
+      if (data) {
+        const newCocktails = data.map((item) => {
+          const {
+            idDrink,
+            strDrink,
+            strDrinkThumb,
+            strCategory,
+            strAlcoholic,
+            strGlass,
+            strInstructions,
+          } = item;
+          return {
+            id: idDrink,
+            name: strDrink,
+            image: strDrinkThumb,
+            category: strCategory,
+            alcoholic: strAlcoholic,
+            glass: strGlass,
+            instructions: strInstructions,
+          };
+        });
+        dispatch({ type: SET_COCKTAILS, payload: newCocktails });
+      } else {
+        dispatch({ type: SET_ERROR, payload: true });
+      }
+    } catch (error) {
+      console.log(error);
+      dispatch({ type: SET_ERROR, payload: true });
+    } finally {
+      dispatch({ type: SET_LOADING, payload: false });
+    }
+  };
+  useEffect(() => {
+    if (!cocktails || cocktails.length === 0) {
+      fetchCocktails();
+    }
+    // Only fetch if cocktails are not already loaded
+  }, [cocktails]);
+
+  if (loading) {
+    return <Loading />;
+  }
+
+  if (error) {
+    return <div className="alert alert-danger">Something went wrong</div>;
+  }
+
+  return <CocktailList />;
+};
+export default memo(Home);
+```
+
+> We are now using the `useAppContext` hook to access the `cocktails`, `loading`, `error` and `dispatch` function from the `GlobalContext`. We are dispatching the `SET_LOADING`, `SET_COCKTAILS` and `SET_ERROR` actions to update the state based on the API response.
+> If the API call is successful, we are dispatching the `SET_COCKTAILS` action with the new cocktails data. If there is an error, we are dispatching the `SET_ERROR` action with an error message. And finally, we are dispatching the `SET_LOADING` action with `false` to indicate that the data has been fetched and the loading state is complete
+> We also added a check to see if the `cocktails` state is empty before making the API call. This will prevent unnecessary API calls when the data is already loaded.
+
+Well, it's working fine. We are fetching the data from the API and updating the state using the `dispatch` function.
+      
+Now, we can display the cocktails on the home page.
+
+The `home` page is already cluttered with a lot of code. So, I think it would be better to create a new component called `CocktailList` that will display the list of cocktails.
+
+# Rendering the Cocktails
+
+Let's create a new file called `CocktailList.jsx` in the `components` folder.
+
+```js {.line-numbers}
+// src/components/CocktailList.jsx
+import React, { memo } from "react";
+import CocktailItem from "./CocktailItem";
+import { useAppContext } from "../context/GlobalContext";
+
+const CocktailList = () => {
+  const { cocktails } = useAppContext();
+
+  return (
+    <div className="row">
+      {cocktails.map((cocktail) => (
+        <CocktailItem key={cocktail.id} cocktail={cocktail} />
+      ))}
     </div>
   );
-};  
-export default memo(Home);
+};
+export default memo(CocktailList);
+
+```
+
+> The `CocktailList` component will receive the `cocktails` state variable from the `GlobalContext` and map through it to render a list of `CocktailItem` components.
+
+Now, we need to create the `CocktailItem` component that will display a single cocktail item.
+
+```js {.line-numbers}
+// src/components/CocktailItem.jsx
+import React, { memo } from "react";
+import { Link } from "react-router";
+import { FaCocktail } from "react-icons/fa";
+
+const CocktailItem = ({ cocktail }) => {
+  const { id, name, image, category, alcoholic, glass } = cocktail;
+
+  return (
+    <div className="col-md-4 mb-4">
+      <div className="card h-100">
+        <img src={image} className="card-img-top" alt={name} />
+        <div className="card-body">
+          <h5 className="card-title">{name}</h5>
+          <p className="card-text">
+            <strong>Category:</strong> {category}
+          </p>
+          <p className="card-text">
+            <strong>Type:</strong> {alcoholic}
+          </p>
+          <p className="card-text">
+            <strong>Glass:</strong> {glass}
+          </p>
+          <Link to={`/cocktail/${id}`} className="btn btn-primary">
+            <FaCocktail /> Details
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
+export default memo(CocktailItem);
+
 ```

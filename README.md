@@ -1075,3 +1075,555 @@ Great work team!
 
 Now time to implement the single cocktail page.
 
+# Single Cocktail Page
+
+Let's implement the `Single Cocktail Page` where we will display the details of a single cocktail.
+
+So, we are getting a list of cocktails on the home page and when the user clicks on a cocktail, they will be redirected to the `Single Cocktail Page` where we will display the details of that cocktail.
+
+Now, That we are going into a new page, we need to fetch the details of the cocktail based on something...
+
+As we have a list of cocktails stored in the `cocktails` state variable, we can use the `id` of the cocktail to fetch the details of that cocktail.
+
+But that will be unuseful because we filtered the data we need and stored it in the `cocktails` state variable. So, some data is already missing.
+
+So, it is a best practice to create a new API endpoint to fetch the details of a single cocktail based on the `id` of the cocktail.
+
+And `cocktail DB` has an endpoint for that.
+
+So, when we are clicking of a cocktail, we will set a dynamic route for the `Single Cocktail Page` and pass the `id` of the cocktail in the URL.
+
+We can get the `id` from the URL using the `useParams` hook from `react-router`. And use that to fetch the details of the cocktail from the API(www.thecocktaildb.com/api/json/v1/1/lookup.php?i=11007).
+
+So, let's go to the `SingleCocktail.jsx` file and implement the logic to fetch the details of the cocktail based on the `id` from the URL.
+
+First, we need to add a new state and actions in the `GlobalContext.jsx` and `reducer.js` files to handle the details of the cocktail.
+
+```js {.line-numbers}
+// src/context/GlobalContext.jsx
+import React, { createContext, useContext } from "react";
+import { useReducer } from "react";
+import { reducer } from "./reducer";
+
+const appContext = createContext();
+
+export const useAppContext = () => {
+  return useContext(appContext);
+};
+
+const initialState = {
+  cocktails: [],
+  loading: true,
+  error: null,
+  details: {}, // new state for single cocktail details
+  singleLoading: true, // new state for single cocktail loading
+  singleError: null, // new state for single cocktail error
+};
+
+const GlobalContext = ({ children }) => {
+  const [state, dispatch] = useReducer(reducer, initialState);
+  return (
+    <appContext.Provider value={{ ...state, dispatch }}>
+      {children}
+    </appContext.Provider>
+  );
+};
+
+export default GlobalContext;
+
+```
+> I added a new state variable called `details` to store the details of the cocktail.
+
+```js {.line-numbers}
+// src/context/reducer.js
+export const SET_COCKTAILS = "SET_COCKTAILS";
+export const SET_LOADING = "SET_LOADING";
+export const SET_ERROR = "SET_ERROR";
+export const SET_DETAILS = "SET_DETAILS";
+export const SET_SINGLE_LOADING = "SET_SINGLE_LOADING";
+export const SET_SINGLE_ERROR = "SET_SINGLE_ERROR";
+
+export const reducer = (state, action) => {
+  const { type, payload } = action;
+
+  if (type === SET_COCKTAILS) {
+    return { ...state, cocktails: payload, loading: false, error: false };
+  }
+
+  if (type === SET_LOADING) {
+    return { ...state, loading: payload };
+  }
+
+  if (type === SET_ERROR) {
+    return { ...state, error: payload };
+  }
+
+  if (type === SET_DETAILS) {
+    return { ...state, details: payload, singleLoading: false, singleError: false };
+  }
+  if (type === SET_SINGLE_LOADING) {
+    return { ...state, singleLoading: payload };
+  }
+
+  if (type === SET_SINGLE_ERROR) {
+    return { ...state, singleError: payload };
+  }
+
+  throw new Error(`No matching action type: ${type}`); // This will throw an error if the action type is not recognized.
+};
+
+```
+
+> I added a new action called `SET_DETAILS` to handle the details of the cocktail. When this action is dispatched, it will update the `details` state variable with the payload and set the `loading` state to false and `error` to null.
+
+
+```js {.line-numbers}
+// src/pages/SingleCocktail.jsx
+import { memo, useEffect } from "react";
+import { useParams } from "react-router";
+import { useAppContext } from "../context/GlobalContext";
+import axios from "axios";
+import Loading from "../components/Loading";
+import {
+  SET_SINGLE_LOADING,
+  SET_SINGLE_ERROR,
+  SET_DETAILS,
+} from "../context/reducer";
+import { formatCocktailDetails } from "../context/reducer";
+const SingleCocktail = () => {
+  const { singleLoading, singleError, details, dispatch } = useAppContext();
+  const { id } = useParams();
+
+  const fetchCocktailDetails = async () => {
+    dispatch({ type: SET_SINGLE_LOADING, payload: true });
+    dispatch({ type: SET_SINGLE_ERROR, payload: null }); // Reset previous error
+    try {
+      const response = await axios.get(
+        `https://www.thecocktaildb.com/api/json/v1/1/lookup.php?i=${id}`
+      );
+      const data = response.data.drinks;
+      if (data && data.length > 0) {
+        const item = data[0];
+        const {
+          idDrink,
+          strDrink,
+          strDrinkThumb,
+          strCategory,
+          strAlcoholic,
+          strGlass,
+          strInstructions,
+          strIngredient1,
+          strIngredient2,
+          strIngredient3,
+          strIngredient4,
+          strIngredient5,
+          strMeasure1,
+          strMeasure2,
+          strMeasure3,
+          strMeasure4,
+          strMeasure5,
+        } = item; // destructuring the item object
+        const cocktailDetails = {
+          id: idDrink,
+          name: strDrink,
+          image: strDrinkThumb,
+          category: strCategory,
+          alcoholic: strAlcoholic,
+          glass: strGlass,
+          instructions: strInstructions,
+          ingredients: [
+            strIngredient1,
+            strIngredient2,
+            strIngredient3,
+            strIngredient4,
+            strIngredient5,
+          ].filter(Boolean), // filtering out any null or undefined ingredients
+          measures: [
+            strMeasure1,
+            strMeasure2,
+            strMeasure3,
+            strMeasure4,
+            strMeasure5,
+          ].filter(Boolean), // filtering out any null or undefined measures
+        };
+        dispatch({ type: SET_DETAILS, payload: cocktailDetails });
+      } else {
+        dispatch({
+          type: SET_SINGLE_ERROR,
+          payload: {
+            type: true,
+            message: "No cocktail found for this ID.",
+          },
+        });
+      }
+    } catch (error) {
+      console.log(error);
+      dispatch({
+        type: SET_SINGLE_ERROR,
+        payload: {
+          type: true,
+          message: "Error fetching cocktail details. Please try again later.",
+        },
+      });
+    } finally {
+      dispatch({ type: SET_SINGLE_LOADING, payload: false });
+    }
+  };
+
+  useEffect(() => {
+    fetchCocktailDetails();
+    // eslint-disable-next-line
+  }, [id]);
+
+  if (singleLoading) {
+    return <Loading />;
+  }
+
+  if (singleError) {
+    return (
+      <div className="alert alert-danger text-center mt-5" role="alert">
+        {singleError.message}
+      </div>
+    );
+  }
+
+  if (!details || !details.id) {
+    return (
+      <div className="alert alert-warning text-center mt-5" role="alert">
+        No cocktail details available.
+      </div>
+    );
+  }
+
+
+  ... // rest of the code stays the same for now
+
+}
+export default memo(SingleCocktail);
+```
+
+> Here, we are using the `useParams` hook to get the `id` of the cocktail from the URL. Then we are making an API call to fetch the details of the cocktail based on the `id`. We are also dispatching the `SET_LOADING`, `SET_DETAILS`, and `SET_ERROR` actions to update the state in the `GlobalContext`.
+
+The fetching process is similar to the one we did in the `Home` page. We are using the `axios` library to make the API call and then dispatching the `SET_DETAILS` action with the cocktail details.
+
+Now if you look at the logic inside the `fetchCocktailDetails` function, we are destructuring the `item` object to get the details of the cocktail. We are also filtering out any null or undefined ingredients and measures.
+
+This is manual work and we can do it in a better way.
+
+Instead of cluttering the code with a lot of destructuring inside the `fetchCocktailDetails` function, we can move this logic to inside the `reducer.js` file.
+
+Let's create a new function called `formatCocktailDetails` that will take the `item` object as an argument and return a formatted cocktail details object.
+
+```js {.line-numbers}
+// src/context/reducer.js
+export const formatCocktailDetails = (item) => {
+  const {
+    idDrink,
+    strDrink,
+    strDrinkThumb,
+    strCategory,
+    strAlcoholic,
+    strGlass,
+    strInstructions,
+    strIngredient1,
+    strIngredient2,
+    strIngredient3,
+    strIngredient4,
+    strIngredient5,
+    strMeasure1,
+    strMeasure2,
+    strMeasure3,
+    strMeasure4,  
+    strMeasure5,
+  } = item; // destructuring the item object
+  return {
+    id: idDrink,
+    name: strDrink,
+    image: strDrinkThumb,
+    category: strCategory,
+    alcoholic: strAlcoholic,
+    glass: strGlass,
+    instructions: strInstructions,
+    ingredients: [
+      strIngredient1,
+      strIngredient2,
+      strIngredient3,
+      strIngredient4,
+      strIngredient5,
+    ].filter(Boolean), // filtering out any null or undefined ingredients
+    measures: [
+      strMeasure1,
+      strMeasure2,
+      strMeasure3,
+      strMeasure4,
+      strMeasure5,
+    ].filter(Boolean), // filtering out any null or undefined measures
+  };
+};
+
+```
+
+> The `formatCocktailDetails` function will take the `item` object as an argument and return a formatted cocktail details object. This way, we can keep the `fetchCocktailDetails` function clean and readable. Now we can use this function inside the `fetchCocktailDetails` function to format the cocktail details.
+
+```js {.line-numbers}
+// src/pages/SingleCocktail.jsx
+import { memo, useEffect } from "react";
+import { useParams } from "react-router";
+import { useAppContext } from "../context/GlobalContext";
+import axios from "axios";
+import Loading from "../components/Loading";
+import {
+  SET_SINGLE_LOADING,
+  SET_SINGLE_ERROR,
+  SET_DETAILS,
+} from "../context/reducer";
+import { formatCocktailDetails } from "../context/reducer";
+const SingleCocktail = () => {
+  const { singleLoading, singleError, details, dispatch } = useAppContext();
+  const { id } = useParams();
+
+  const fetchCocktailDetails = async () => {
+    dispatch({ type: SET_SINGLE_LOADING, payload: true });
+    dispatch({ type: SET_SINGLE_ERROR, payload: null }); // Reset previous error
+    try {
+      const response = await axios.get(
+        `https://www.thecocktaildb.com/api/json/v1/1/lookup.php?i=${id}`
+      );
+      const data = response.data.drinks;
+      if (data && data.length > 0) {
+        const cocktailDetails = formatCocktailDetails(data[0]);
+        dispatch({ type: SET_DETAILS, payload: cocktailDetails });
+      } else {
+        dispatch({
+          type: SET_SINGLE_ERROR,
+          payload: {
+            type: true,
+            message: "No cocktail found for this ID.",
+          },
+        });
+      }
+    } catch (error) {
+      console.log(error);
+      dispatch({
+        type: SET_SINGLE_ERROR,
+        payload: {
+          type: true,
+          message: "Error fetching cocktail details. Please try again later.",
+        },
+      });
+    } finally {
+      dispatch({ type: SET_SINGLE_LOADING, payload: false });
+    }
+  };
+
+  useEffect(() => {
+    fetchCocktailDetails();
+  }, [id]);
+
+  if (singleLoading) {
+    return <Loading />;
+  } // check if loading
+
+  if (singleError) {
+    return (
+      <div className="alert alert-danger text-center mt-5" role="alert">
+        {singleError.message}
+      </div>
+    );
+  } // check if there is an error
+
+  if (!details || !details.id) {
+    return (
+      <div className="alert alert-warning text-center mt-5" role="alert">
+        No cocktail details available.
+      </div>
+    );
+  } // check if details is empty
+
+  ... // rest of the code stays the same for now
+
+}
+export default memo(SingleCocktail);
+```
+
+> Now we are using the `formatCocktailDetails` function to format the cocktail details. This way, we can keep the `fetchCocktailDetails` function clean and readable.
+
+Now, I want to make a new component and send the details to that component as props and render the details there.
+
+Because the `SingleCocktail` component is already cluttered with a lot of code. So, I think it would be better to create a new component called `CocktailDetails` that will display the details of the cocktail.
+
+```js {.line-numbers}
+// src/components/CocktailDetails.jsx
+import React, { memo } from "react";
+import { Link } from "react-router";
+import { FaCocktail } from "react-icons/fa";
+
+const CocktailDetails = ({ details }) => {
+  const {
+    id,
+    name,
+    image,
+    category,
+    alcoholic,
+    glass,
+    instructions,
+    ingredients,
+    measures,
+  } = details;
+
+  return (
+    <div className="container mt-5">
+      <Link to="/" className="btn btn-primary mb-4">
+        <FaCocktail /> Back to Home
+      </Link>
+      <div className="card mb-3">
+        <div className="row g-0">
+          <div className="col-md-4">
+            <img src={image} className="img-fluid rounded-start" alt={name} />
+          </div>
+          <div className="col-md-8">
+            <div className="card-body">
+              <h2 className="card-title">{name}</h2>
+              <p className="card-text">
+                <strong>Category:</strong> {category}
+              </p>
+              <p className="card-text">
+                <strong>Type:</strong> {alcoholic}
+              </p>
+              <p className="card-text">
+                <strong>Glass:</strong> {glass}
+              </p>
+              <p className="card-text">
+                <strong>Instructions:</strong> {instructions}
+              </p>
+              <h5>Ingredients:</h5>
+              <ul className="list-group list-group-flush">
+                {ingredients.map((ingredient, index) => (
+                  <li key={index} className="list-group-item">
+                    {ingredient} - {measures[index] || ""}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+export default memo(CocktailDetails);
+```
+
+Now we just connect this component to the `SingleCocktail` page and send the `details` as props to the `CocktailDetails` component.
+
+```js {.line-numbers}
+// src/pages/SingleCocktail.jsx
+import { memo, useEffect } from "react";
+import { useParams } from "react-router";
+import { useAppContext } from "../context/GlobalContext";
+import axios from "axios";
+import Loading from "../components/Loading";
+import {
+  SET_SINGLE_LOADING,
+  SET_SINGLE_ERROR,
+  SET_DETAILS,
+} from "../context/reducer";
+import { formatCocktailDetails } from "../context/reducer";
+import CocktailDetails from "../components/CocktailDetails";
+const SingleCocktail = () => {
+  const { singleLoading, singleError, details, dispatch } = useAppContext();
+  const { id } = useParams();
+
+  const fetchCocktailDetails = async () => {
+    dispatch({ type: SET_SINGLE_LOADING, payload: true });
+    dispatch({ type: SET_SINGLE_ERROR, payload: null }); // Reset previous error
+    try {
+      const response = await axios.get(
+        `https://www.thecocktaildb.com/api/json/v1/1/lookup.php?i=${id}`
+      );
+      const data = response.data.drinks;
+      if (data && data.length > 0) {
+        const cocktailDetails = formatCocktailDetails(data[0]);
+        dispatch({ type: SET_DETAILS, payload: cocktailDetails });
+      } else {
+        dispatch({
+          type: SET_SINGLE_ERROR,
+          payload: {
+            type: true,
+            message: "No cocktail found for this ID.",
+          },
+        });
+      }
+    } catch (error) {
+      console.log(error);
+      dispatch({
+        type: SET_SINGLE_ERROR,
+        payload: {
+          type: true,
+          message: "Error fetching cocktail details. Please try again later.",
+        },
+      });
+    } finally {
+      dispatch({ type: SET_SINGLE_LOADING, payload: false });
+    }
+  };
+
+  useEffect(() => {
+    fetchCocktailDetails();
+  }, [id]);
+
+  if (singleLoading) {
+    return <Loading />;
+  }
+
+  if (singleError) {
+    return (
+      <div className="alert alert-danger text-center mt-5" role="alert">
+        {singleError.message}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {!singleLoading && !singleError && details ? (
+        <CocktailDetails details={details} />
+      ) : (
+        <div className="alert alert-warning text-center mt-5" role="alert">
+          No cocktail details available.
+        </div>
+      )}
+    </>
+  );
+};
+
+export default memo(SingleCocktail);
+```
+
+> Here, we are importing the `CocktailDetails` component and rendering it inside the `SingleCocktail` component. We are also passing the `details` state variable as props to the `CocktailDetails` component.
+
+And that's it. We have successfully implemented the `Single Cocktail Page` where we can see the details of a single cocktail.
+
+And the logical part over...
+
+![alt text](image-2.png)
+
+This is exactly what I had to do make to make this app work. This was a struggle but we made it.
+
+Now is the time for adding a `about` page and this project is done. I'll not be showing you the code for the about page because it's just a static page with some text and images. You can easily create it by yourself.
+
+So, It'll be your task to add a nice little portfolio component in the about page and make it look nice.
+
+And we are done here.
+
+But are we really done?
+
+Before we finish I want to share this project to everyone.
+
+So, I need to deploy this project.
+
+I haven't talked about deployment yet.
+
+So, I think it'll be a good idea to show you how to deploy a react app.
+
+# Deployment

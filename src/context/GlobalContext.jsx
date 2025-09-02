@@ -12,6 +12,9 @@ const initialState = {
   cocktails: [],
   loading: true,
   error: null,
+  details: {},
+  singleLoading: true,
+  singleError: null,
 };
 
 const GlobalContext = ({ children }) => {

@@ -6,7 +6,7 @@ export const reducer = (state, action) => {
   const { type, payload } = action;
 
   if (type === SET_COCKTAILS) {
-    return { ...state, cocktails: payload, loading: false };
+    return { ...state, cocktails: payload, loading: false, error: false };
   }
 
   if (type === SET_LOADING) {

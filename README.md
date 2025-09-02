@@ -766,7 +766,7 @@ export const reducer = (state, action) => {
   const { type, payload } = action;
 
   if (type === SET_COCKTAILS) {
-    return { ...state, cocktails: payload, loading: false, error: null };
+    return { ...state, cocktails: payload, loading: false, error: false };
   }
 
   if (type === SET_LOADING) {
@@ -779,6 +779,7 @@ export const reducer = (state, action) => {
 
   throw new Error(`No matching action type: ${type}`); // This will throw an error if the action type is not recognized.
 };
+
 
 ```
 
@@ -933,3 +934,144 @@ const CocktailItem = ({ cocktail }) => {
 export default memo(CocktailItem);
 
 ```
+
+> The `CocktailItem` component will receive a single cocktail object as a prop and display its details like name, image, category, type, and glass type. It will also have a link to the `Single Cocktail Page` where the user can see more details about the cocktail.
+
+Now, we can see the list of cocktails on the home page.
+
+Now, let's implement the `Search Form` component that will allow the user to search for cocktails by name.
+
+# Search Form Component
+
+Let's create a `cocktail search form` inside the `Home` page.
+
+```js {.line-numbers}
+// src/pages/Home.jsx
+import React, { memo, useEffect, useState } from "react";
+import axios from "axios";
+import Loading from "../components/Loading";
+import CocktailList from "../components/CocktailList";
+import { useAppContext } from "../context/GlobalContext";
+import { SET_COCKTAILS, SET_LOADING, SET_ERROR } from "../context/reducer";
+
+const Home = () => {
+  const { cocktails, loading, error, dispatch } = useAppContext();
+  const letters = "abcdefghijklmnopqrstuvwxyz";
+  const randomLetter = letters[Math.floor(Math.random() * letters.length)];
+  // State for search term
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const fetchCocktails = async (term) => {
+    dispatch({ type: SET_LOADING, payload: true });
+    try {
+      const response = await axios.get(
+        `https://www.thecocktaildb.com/api/json/v1/1/search.php?s=${term}`
+      );
+      const data = response.data.drinks;
+      if (data) {
+        const newCocktails = data.map((item) => {
+          const {
+            idDrink,
+            strDrink,
+            strDrinkThumb,
+            strCategory,
+            strAlcoholic,
+            strGlass,
+            strInstructions,
+          } = item;
+          return {
+            id: idDrink,
+            name: strDrink,
+            image: strDrinkThumb,
+            category: strCategory,
+            alcoholic: strAlcoholic,
+            glass: strGlass,
+            instructions: strInstructions,
+          };
+        });
+        dispatch({ type: SET_COCKTAILS, payload: newCocktails });
+      } else {
+        dispatch({
+          type: SET_ERROR,
+          payload: {
+            type: true,
+            message: "No cocktails found for the search term.",
+          },
+        });
+      }
+    } catch (error) {
+      console.log(error);
+      dispatch({
+        type: SET_ERROR,
+        payload: {
+          type: true,
+          message: "Error fetching cocktails. Please try again later.",
+        },
+      });
+    } finally {
+      dispatch({ type: SET_LOADING, payload: false });
+    }
+  };
+
+  useEffect(() => {
+    if (!cocktails || cocktails.length === 0) {
+      fetchCocktails(randomLetter); // Default search term
+    }
+  }, [cocktails]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      fetchCocktails(searchTerm);
+    }
+  };
+
+  return (
+    <>
+      <form onSubmit={handleSearch} className="mb-4">
+        <div className="input-group">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search for cocktails..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <button className="btn btn-primary" type="submit">
+            Search
+          </button>
+        </div>
+      </form>
+      {loading && <Loading />}
+      {error && (
+        <div className="alert alert-danger">
+          {error.message || "An error occurred while fetching cocktails."}
+        </div>
+      )}
+      {cocktails && cocktails.length > 0 ? (
+        <CocktailList cocktails={cocktails} />
+      ) : (
+        !loading && <div className="alert alert-info">No cocktails found</div>
+      )} 
+    </>
+  );
+};
+export default memo(Home);
+```
+
+> Here, I added a search form that allows the user to search for cocktails by name. The `searchTerm` state variable is used to store the search term entered by the user. When the user submits the form, the `handleSearch` function is called which fetches the cocktails based on the search term.
+> If the search term is empty, it will fetch cocktails with a random letter as before. If the search term is not empty, it will fetch cocktails based on the search term.
+
+So, I did some adjustments to the `fetchCocktails` function to accept a search term as an argument. If the search term is empty, it will fetch cocktails with a random letter as before. If the search term is not empty, it will fetch cocktails based on the search term.
+
+Also for better error management, I updated the `error` state to be an object with `type` and `message` properties. This way, we can display a more descriptive error message to the user.
+
+And finally, I added a check to see if the `cocktails` state is empty before rendering the `CocktailList` component. If there are no cocktails found, it will display a message saying "No cocktails found".
+
+Standered stuff and totally not filled with bugs that I don't even know about.
+
+Great work team!
+![alt text](image-1.png)
+
+Now time to implement the single cocktail page.
+

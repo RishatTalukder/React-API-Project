@@ -510,3 +510,91 @@ This endpoint will return a list of cocktails that match the search query at the
 Another endpoint is
 
 - Lookup full cocktail details by id - `https://www.thecocktaildb.com/api/json/v1/1/lookup.php?i=11007`
+
+This endpoint will return the details of a single cocktail based on the id provided at the end of the URL. Here the id is `11007`. You can change it to any valid id.
+
+So, let's start with the `Home` page.
+
+# Home Page
+
+First let's try to load some random cocktails on the home page.
+
+If you take a look at the API documentation, you can see that the `cocktail DB` API doesn't have an endpoint to fetch random cocktails.
+
+So, We will improvise.
+
+As we are using the search endpoint to fetch cocktails with a cirtain name and it will return a list of cocktails that match the search query, meaning if we search for `a`, it will return a list of cocktails that have `a` in their name.
+
+We can use this to our advantage.
+
+When the `home` page `loads`, we can make an API call to fetch cocktails with a random letter.
+
+Than we can display the results on the screen.
+
+So, let's do that.
+
+```js {.line-numbers}
+// src/pages/Home.jsx
+import React, { memo, useEffect } from "react";
+import { useAppContext } from "../context/GlobalContext";
+import axios from "axios";
+import Loading from "../components/Loading";
+import CocktailList from "../components/CocktailList";
+
+const Home = () => {
+  const { cocktails, loading, dispatch } = useAppContext();
+
+  const fetchRandomCocktails = async () => {
+    dispatch({ type: "SET_LOADING" });
+    const randomChar = String.fromCharCode(
+      97 + Math.floor(Math.random() * 26)
+    ); // generate a random character from a-z
+    try {
+      const response = await axios.get(
+        `https://www.thecocktaildb.com/api/json/v1/1/search.php?s=${randomChar}`
+      );
+      const data = response.data.drinks;
+      if (data) {
+        const newCocktails = data.map((item) => {
+          const {
+            idDrink,
+            strDrink,
+            strDrinkThumb,
+            strAlcoholic,
+            strGlass,
+          } = item;
+          return {
+            id: idDrink,
+            name: strDrink,
+            image: strDrinkThumb,
+            info: strAlcoholic,
+            glass: strGlass,
+          };
+        });
+        dispatch({ type: "SET_COCKTAILS", payload: newCocktails });
+      } else {
+        dispatch({ type: "SET_COCKTAILS", payload: [] });
+      }
+    } catch (error) {
+      console.log(error);
+      dispatch({ type: "SET_COCKTAILS", payload: [] });
+    }
+  };
+
+  useEffect(() => {
+    fetchRandomCocktails();
+  }, []);
+
+  if (loading) {
+    return <Loading />;
+  }
+
+  return (
+    <div>
+      <h1 className="text-center mb-4">Cocktail Recipes</h1>
+      <Cocktail List cocktails={cocktails} />
+    </div>
+  );
+};  
+export default memo(Home);
+```

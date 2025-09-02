@@ -1627,3 +1627,5 @@ I haven't talked about deployment yet.
 So, I think it'll be a good idea to show you how to deploy a react app.
 
 # Deployment
+
+Deploying a React app is very easy

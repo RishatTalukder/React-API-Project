@@ -1628,4 +1628,54 @@ So, I think it'll be a good idea to show you how to deploy a react app.
 
 # Deployment
 
-Deploying a React app is very easy
+Deploying a React app is very easy. You can use vercel or netlify to deploy your app for free.
+
+I use vercel for quick and easy deployment.
+
+First go to [vercel.com](https://vercel.com) and sign up for a free account.
+
+Go to overview and you should see a button called `new project` or `add new`.
+
+![alt text](image-3.png)
+
+Click on that button and choose `project`,
+
+It'll take you to a new page where you can import your project from github.
+
+I'll ask for access to your github account.
+
+Grant the access. Then click here.
+![alt text](image-4.png)
+
+Vercel needs access to your repositories to deploy your project.
+
+So, it'll open up a new window wher you should be able add your repositories.
+
+find it and add it.
+
+Vercel will autometically detect that it's a react app and set the build command and output directory for you.
+
+Click on the import button and it will take you to a page like this.
+
+![alt text](image-5.png)
+
+just click on the button that says `deploy`.
+
+Wait for a few seconds and your app will be deployed.
+
+you can check for the deployment status in the vercel dashboard and also you will get a `URL` for your deployed app.
+
+And that's how you can deploy a react app for free using vercel in just a few minutes.
+
+
+# ARGH!!!
+
+This took a lot of time and effort. I hope this was usefull and I nee some rest... Nothing more to say here... 
+
+Need rest...
+
+Head spinning...
+
+Need sleep...
+
+#### SLEEPY CODING BOIS

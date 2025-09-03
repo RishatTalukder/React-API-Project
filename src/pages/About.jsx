@@ -10,7 +10,7 @@ const About = () => {
           <img
             src={noice}
             className="img-fluid rounded-circle"
-            style={{ width: "300px", height: "300px", objectFit: "cover" }}
+            style={{ width: "300px", height: "300px", objectFit: "contain" }}
             alt="Profile"
           />
         </div>
